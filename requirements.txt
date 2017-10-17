@@ -1,6 +1,7 @@
 cycler==0.10.0
 decorator==4.1.2
 filterpy==1.0.0
+imutils==0.4.3
 matplotlib==2.1.0
 networkx==2.0
 numpy==1.13.3
