@@ -14,9 +14,12 @@ if __name__ == '__main__':
         image_path = "{0}/{1}".format(IMAGE_DIR, image_name)
         out_path = "{0}/{1}".format(OUT_DIR, image_name)
         image = cv2.imread(image_path)
-        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        dst = cv2.fastNlMeansDenoising(image, None, 10, 7, 21)
+        gray = cv2.cvtColor(dst , cv2.COLOR_BGR2GRAY)
         blurred = cv2.GaussianBlur(gray, (11, 11), 0)
-        thresh = cv2.threshold(gray, 100, 255, cv2.THRESH_BINARY)[1]
+        # threshold the image to reveal light regions in the
+        # blurred image
+        thresh = cv2.threshold(blurred, 100, 255, cv2.THRESH_BINARY)[1]
         # perform a series of erosions and dilations to remove
         # any small blobs of noise from the thresholded image
         thresh = cv2.erode(thresh, None, iterations=2)
@@ -43,11 +46,20 @@ if __name__ == '__main__':
             # large, then add it to our mask of "large blobs"
             if numPixels > 300:
                 mask = cv2.add(mask, labelMask)
+
+
         # find the contours in the mask, then sort them from left to
         # right
         cnts = cv2.findContours(mask.copy(), cv2.RETR_EXTERNAL,
                                 cv2.CHAIN_APPROX_SIMPLE)
         cnts = cnts[0] if imutils.is_cv2() else cnts[1]
+        moments = [cv2.moments(cnt) for cnt in cnts]
+
+        centroids = [(int(round(m['m10'] / m['m00'])),
+                      int(round(m['m01'] / m['m00']))) for m in moments]
+
+        print(centroids)
+
         cnts = contours.sort_contours(cnts)[0]
 
         # loop over the contours
@@ -63,4 +75,5 @@ if __name__ == '__main__':
         # show the output image
         # cv2.imshow("Image", image)
         # cv2.waitKey(0)
+        cv2.imwrite(thresh)
         cv2.imwrite(out_path, image)
